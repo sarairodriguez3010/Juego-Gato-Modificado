@@ -177,6 +177,72 @@
         font-size: 1.7rem;
       }
     }
+
+    /* Modal de Victoria */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(107, 79, 95, 0.4);
+      backdrop-filter: blur(8px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-content {
+      background: var(--panel);
+      border: 3px solid #ffd6e7;
+      border-radius: 28px;
+      padding: 32px;
+      width: min(90vw, 400px);
+      text-align: center;
+      box-shadow: 0 24px 50px rgba(212, 170, 190, 0.4);
+      transform: scale(0.85);
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .modal-overlay.active .modal-content {
+      transform: scale(1);
+    }
+
+    .modal-emoji {
+      font-size: 5rem;
+      margin-bottom: 12px;
+      animation: bounce 1.2s infinite alternate;
+    }
+
+    .modal-content h2 {
+      margin: 0 0 8px;
+      color: #8c5a73;
+      font-size: 2.2rem;
+    }
+
+    .modal-content p {
+      font-size: 1.2rem;
+      color: var(--text);
+      margin: 0 0 24px;
+    }
+
+    @keyframes bounce {
+      0% {
+        transform: translateY(0) scale(1);
+      }
+      100% {
+        transform: translateY(-15px) scale(1.05);
+      }
+    }
   </style>
 </head>
 <body>
@@ -224,12 +290,28 @@
     </div>
   </div>
 
+  <!-- Modal de Victoria -->
+  <div class="modal-overlay" id="winModal">
+    <div class="modal-content">
+      <div class="modal-emoji" id="modalEmoji">🐱</div>
+      <h2>¡Felicidades!</h2>
+      <p id="modalMessage">Ganó Gatito 🐱</p>
+      <button class="action" id="closeModal">Jugar de nuevo</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <script>
     const cells = document.querySelectorAll(".cell");
     const statusEl = document.getElementById("status");
     const resetGameBtn = document.getElementById("resetGame");
     const resetScoreBtn = document.getElementById("resetScore");
     const toggleSoundBtn = document.getElementById("toggleSound");
+
+    const winModal = document.getElementById("winModal");
+    const modalEmoji = document.getElementById("modalEmoji");
+    const modalMessage = document.getElementById("modalMessage");
+    const closeModalBtn = document.getElementById("closeModal");
 
     const scoreCatEl = document.getElementById("scoreCat");
     const scoreDogEl = document.getElementById("scoreDog");
@@ -255,6 +337,60 @@
       cat: "Gatito 🐱",
       dog: "Perrito 🐶"
     };
+
+    function triggerConfetti() {
+      if (typeof confetti === "function") {
+        const duration = 3 * 1000;
+        const animationEnd = Date.now() + duration;
+        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 1100 };
+
+        function randomInRange(min, max) {
+          return Math.random() * (max - min) + min;
+        }
+
+        const interval = setInterval(function() {
+          const timeLeft = animationEnd - Date.now();
+
+          if (timeLeft <= 0) {
+            return clearInterval(interval);
+          }
+
+          const particleCount = 50 * (timeLeft / duration);
+          confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
+          confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
+        }, 250);
+      } else {
+        createDOMConfetti();
+      }
+    }
+
+    function createDOMConfetti() {
+      const colors = ["#ff8fab", "#a0c4ff", "#ffd166", "#fbcfe8", "#ffc6ff", "#bdb2ff"];
+      for (let i = 0; i < 80; i++) {
+        const particle = document.createElement("div");
+        particle.style.position = "fixed";
+        particle.style.width = Math.random() * 8 + 4 + "px";
+        particle.style.height = Math.random() * 8 + 4 + "px";
+        particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        particle.style.left = Math.random() * 100 + "vw";
+        particle.style.top = "-20px";
+        particle.style.borderRadius = Math.random() > 0.5 ? "50%" : "0";
+        particle.style.zIndex = "1100";
+        particle.style.pointerEvents = "none";
+        document.body.appendChild(particle);
+
+        const duration = Math.random() * 2 + 1.5;
+        const drift = Math.random() * 200 - 100;
+
+        particle.animate([
+          { transform: "translateY(0) rotate(0deg)", opacity: 1 },
+          { transform: `translateY(110vh) translateX(${drift}px) rotate(${Math.random() * 360}deg)`, opacity: 0 }
+        ], {
+          duration: duration * 1000,
+          easing: "ease-out"
+        }).onfinish = () => particle.remove();
+      }
+    }
 
     const winPatterns = [
       [0, 1, 2],
